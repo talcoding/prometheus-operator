@@ -258,3 +258,7 @@ $(PO_DOCGEN_BINARY): $(shell find cmd/po-docgen -type f) $(TYPES_V1_TARGET)
 
 $(GOJSONTOYAML_BINARY):
 	@go install -mod=vendor github.com/brancz/gojsontoyaml
+	go get -u github.com/brancz/gojsontoyaml
+
+dev:
+	bash ./hack/dev-external.sh minikube

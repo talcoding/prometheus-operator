@@ -29,7 +29,7 @@ import (
 
 	alertmanagercontroller "github.com/coreos/prometheus-operator/pkg/alertmanager"
 	"github.com/coreos/prometheus-operator/pkg/api"
-	monitoring "github.com/coreos/prometheus-operator/pkg/apis/monitoring"
+	"github.com/coreos/prometheus-operator/pkg/apis/monitoring"
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	prometheuscontroller "github.com/coreos/prometheus-operator/pkg/prometheus"
 	"github.com/coreos/prometheus-operator/pkg/version"
@@ -39,7 +39,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/sync/errgroup"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	"k8s.io/klog"
 )
 
@@ -146,6 +146,7 @@ func Main() int {
 	if cfg.LogFormat == logFormatJson {
 		logger = log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
 	}
+
 	switch cfg.LogLevel {
 	case logLevelAll:
 		logger = level.NewFilter(logger, level.AllowAll())

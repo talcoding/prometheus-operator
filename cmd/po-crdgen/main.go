@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"os"
 
-	monitoring "github.com/coreos/prometheus-operator/pkg/apis/monitoring"
+	"github.com/coreos/prometheus-operator/pkg/apis/monitoring"
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
-	k8sutil "github.com/coreos/prometheus-operator/pkg/k8sutil"
+	"github.com/coreos/prometheus-operator/pkg/k8sutil"
 
 	crdutils "github.com/ant31/crd-validation/pkg"
 	extensionsobj "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -69,10 +69,15 @@ func init() {
 
 func main() {
 	crd := k8sutil.NewCustomResourceDefinition(
-		monitoringv1.CrdKind{Plural: cfg.Plural,
+		monitoringv1.CrdKind{
+			Plural:   cfg.Plural,
 			Kind:     cfg.Kind,
-			SpecName: cfg.SpecDefinitionName},
-		cfg.Group, cfg.Labels.LabelsMap, cfg.EnableValidation)
+			SpecName: cfg.SpecDefinitionName,
+		},
+		cfg.Group,
+		cfg.Labels.LabelsMap,
+		cfg.EnableValidation,
+	)
 
 	err := crdutils.MarshallCrd(crd, cfg.OutputFormat)
 	if err != nil {

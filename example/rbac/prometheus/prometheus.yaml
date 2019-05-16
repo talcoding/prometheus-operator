@@ -5,7 +5,7 @@ metadata:
   labels:
     prometheus: prometheus
 spec:
-  replicas: 2
+  replicas: 1
   serviceAccountName: prometheus
   serviceMonitorSelector:
     matchLabels:
@@ -13,5 +13,9 @@ spec:
   alerting:
     alertmanagers:
     - namespace: default
-      name: alertmanager
+      name: alertmanager-example
       port: web
+  ruleSelector:
+    matchLabels:
+      role: alert-rules
+      prometheus: example

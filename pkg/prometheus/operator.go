@@ -195,6 +195,8 @@ func New(conf Config, logger log.Logger) (*Operator, error) {
 		kubeletSyncEnabled = true
 	}
 
+	logger.Log("msg", kubeletSyncEnabled)
+
 	c := &Operator{
 		kclient:                client,
 		mclient:                mclient,
@@ -290,6 +292,8 @@ func New(conf Config, logger log.Logger) (*Operator, error) {
 		listwatch.NewUnprivilegedNamespaceListWatchFromClient(c.kclient.CoreV1().RESTClient(), c.config.Namespaces, fields.Everything()),
 		&v1.Namespace{}, nsResyncPeriod, cache.Indexers{},
 	)
+
+	logger.Log("msg", "new operator....")
 
 	return c, nil
 }
