@@ -1,0 +1,12 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: app-ingress
+spec:
+  rules:
+    - host: app.talcoding.com
+      http:
+        paths:
+          - backend:
+              serviceName: example-app
+              servicePort: 8080
