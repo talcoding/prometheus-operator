@@ -3,4 +3,4 @@ kind: Alertmanager
 metadata:
   name: example
 spec:
-  replicas: 3
+  replicas: 1

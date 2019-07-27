@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ingress-controller-monitor
+  labels:
+    team: frontend
+spec:
+  namespaceSelector:
+    any: true
+    matchNames:
+      - kube-system
+  selector:
+    matchLabels:
+      app: ingress-nginx
+  endpoints:
+    - port: health

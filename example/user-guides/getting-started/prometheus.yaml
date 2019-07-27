@@ -3,6 +3,9 @@ kind: Prometheus
 metadata:
   name: prometheus
 spec:
+#  serviceMonitorNamespaceSelector:
+#    matchLabels:
+#      namespace: kube-system
   serviceAccountName: prometheus
   serviceMonitorSelector:
     matchLabels:

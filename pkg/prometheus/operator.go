@@ -939,6 +939,7 @@ func (c *Operator) enqueueForNamespace(nsName string) {
 // concurrently with the same key.
 func (c *Operator) worker() {
 	for c.processNextWorkItem() {
+		level.Info(c.logger).Log("msg", "process next work item")
 	}
 }
 
@@ -1038,6 +1039,8 @@ func (c *Operator) handleStatefulSetUpdate(oldo, curo interface{}) {
 }
 
 func (c *Operator) sync(key string) error {
+
+	c.logger.Log("msg", key, "com", "sync")
 	obj, exists, err := c.promInf.GetIndexer().GetByKey(key)
 	if err != nil {
 		return err

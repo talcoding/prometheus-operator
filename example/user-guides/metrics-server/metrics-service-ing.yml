@@ -1,0 +1,13 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: metrics-server
+  namespace: kube-system
+spec:
+  rules:
+    - host: metrics-server.talcoding.com
+      http:
+        paths:
+          - backend:
+              serviceName: metrics-server
+              servicePort: 443

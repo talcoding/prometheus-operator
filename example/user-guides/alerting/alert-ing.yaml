@@ -1,0 +1,12 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: alert-ingress
+spec:
+  rules:
+    - host: alert.talcoding.com
+      http:
+        paths:
+          - backend:
+              serviceName: alertmanager-example
+              servicePort: 9093
