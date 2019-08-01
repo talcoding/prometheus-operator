@@ -1,7 +1,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: ingress-controller
+  name: kube-dns
   labels:
     team: frontend
 spec:
@@ -11,6 +11,8 @@ spec:
       - kube-system
   selector:
     matchLabels:
-      app: ingress-nginx
+      k8s-app: kube-dns
+      kubernetes.io/cluster-service: "true"
+      kubernetes.io/name: KubeDNS
   endpoints:
-    - port: health
+    - port: metrics

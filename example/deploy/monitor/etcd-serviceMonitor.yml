@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: etcd
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      k8s-app: etcd
+  endpoints:
+    - port: https-metrics
+      scheme: https
+      tlsConfig:
+        serverName: etcd.monitoring.svc.cluster.local
+        caFile: /etc/prometheus/secrets/etcd-certs/ca.pem
+        certFile: /etc/prometheus/secrets/etcd-certs/etcd-client.pem
+        keyFile: /etc/prometheus/secrets/etcd-certs/etcd-client-key.pem
+        insecureSkipVerify: true

@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  labels:
+    k8s-app: etcd
+  name: etcd
+  namespace: monitoring
+subsets:
+  - addresses:
+      - ip: 172.16.132.147
+        targetRef:
+          kind: Node
+          name: cn-beijing.172.16.132.147
+          uid: 1ba1f678-a6b7-11e9-a67e-00163e03e155
+      - ip: 172.16.132.148
+        targetRef:
+          kind: Node
+          name: cn-beijing.172.16.132.148
+          uid: 4e6025d4-a6b7-11e9-a94b-00163e129c28
+      - ip: 172.16.132.149
+        targetRef:
+          kind: Node
+          name: cn-beijing.172.16.132.149
+          uid: 7b6b4266-a6b7-11e9-a5cd-00163e086800
+    ports:
+      - name: https-metrics
+        port: 2379
+        protocol: TCP

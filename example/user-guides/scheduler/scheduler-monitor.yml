@@ -1,7 +1,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: ingress-controller
+  name: kube-scheduler
   labels:
     team: frontend
 spec:
@@ -11,6 +11,6 @@ spec:
       - kube-system
   selector:
     matchLabels:
-      app: ingress-nginx
+      app: kube-scheduler
   endpoints:
-    - port: health
+    - port: http

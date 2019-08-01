@@ -1,0 +1,13 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: controller-manager
+  namespace: kube-system
+spec:
+  rules:
+    - host: manager.talcoding.com
+      http:
+        paths:
+          - backend:
+              serviceName: controller-manager 
+              servicePort: 10252

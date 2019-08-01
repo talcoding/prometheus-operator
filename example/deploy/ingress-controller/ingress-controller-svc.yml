@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx
+  namespace: kube-system
+  labels:
+    k8s-app: ingress-nginx
+spec:
+  ports:
+    - name: health
+      port: 10254
+      protocol: TCP
+      targetPort: 10254
+  selector:
+    addonmanager.kubernetes.io/mode: Reconcile
+    app.kubernetes.io/name: nginx-ingress-controller
+    app.kubernetes.io/part-of: kube-system
+
+  sessionAffinity: None

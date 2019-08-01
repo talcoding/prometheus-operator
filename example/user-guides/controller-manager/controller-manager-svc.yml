@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: controller-manager
+  namespace: kube-system
+  labels:
+    app: controller-manager
+spec:
+  ports:
+    - name: http 
+      port: 10252
+      protocol: TCP
+      targetPort: 10252
+  selector:
+    component: kube-controller-manager
+    tier: control-plane
+
+  sessionAffinity: None

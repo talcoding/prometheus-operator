@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: etcd
+  namespace: kube-system
+  labels:
+    app: etcd 
+spec:
+  ports:
+    - name: metrics 
+      port: 4379
+      protocol: TCP
+      targetPort: 4379
+  selector:
+    component: etcd 
+    tier: control-plane
+
+  sessionAffinity: None
