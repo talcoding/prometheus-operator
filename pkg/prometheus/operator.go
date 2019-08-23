@@ -145,6 +145,7 @@ type Config struct {
 	PrometheusDefaultBaseImage    string
 	ThanosDefaultBaseImage        string
 	Namespaces                    []string
+	DeniedNamespaces              []string
 	Labels                        Labels
 	CrdGroup                      string
 	CrdKinds                      monitoringv1.CrdKinds
@@ -223,7 +224,7 @@ func New(conf Config, logger log.Logger) (*Operator, error) {
 	}
 
 	c.promInf = cache.NewSharedIndexInformer(
-		listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
+		listwatch.MultiNamespaceListerWatcher(c.logger, c.config.Namespaces, c.config.DeniedNamespaces, func(namespace string) cache.ListerWatcher {
 			return &cache.ListWatch{
 				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 					options.LabelSelector = c.config.PromSelector
@@ -239,7 +240,7 @@ func New(conf Config, logger log.Logger) (*Operator, error) {
 	)
 
 	c.smonInf = cache.NewSharedIndexInformer(
-		listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
+		listwatch.MultiNamespaceListerWatcher(c.logger, c.config.Namespaces, c.config.DeniedNamespaces, func(namespace string) cache.ListerWatcher {
 			return &cache.ListWatch{
 				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 					return mclient.MonitoringV1().ServiceMonitors(namespace).List(options)
@@ -251,7 +252,7 @@ func New(conf Config, logger log.Logger) (*Operator, error) {
 	)
 
 	c.pmonInf = cache.NewSharedIndexInformer(
-		listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
+		listwatch.MultiNamespaceListerWatcher(c.logger, c.config.Namespaces, c.config.DeniedNamespaces, func(namespace string) cache.ListerWatcher {
 			return &cache.ListWatch{
 				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 					return mclient.MonitoringV1().PodMonitors(namespace).List(options)
@@ -263,7 +264,7 @@ func New(conf Config, logger log.Logger) (*Operator, error) {
 	)
 
 	c.ruleInf = cache.NewSharedIndexInformer(
-		listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
+		listwatch.MultiNamespaceListerWatcher(c.logger, c.config.Namespaces, c.config.DeniedNamespaces, func(namespace string) cache.ListerWatcher {
 			return &cache.ListWatch{
 				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 					return mclient.MonitoringV1().PrometheusRules(namespace).List(options)
@@ -275,7 +276,7 @@ func New(conf Config, logger log.Logger) (*Operator, error) {
 	)
 
 	c.cmapInf = cache.NewSharedIndexInformer(
-		listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
+		listwatch.MultiNamespaceListerWatcher(c.logger, c.config.Namespaces, c.config.DeniedNamespaces, func(namespace string) cache.ListerWatcher {
 			return &cache.ListWatch{
 				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 					options.LabelSelector = labelPrometheusName
@@ -291,14 +292,14 @@ func New(conf Config, logger log.Logger) (*Operator, error) {
 	)
 
 	c.secrInf = cache.NewSharedIndexInformer(
-		listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
+		listwatch.MultiNamespaceListerWatcher(c.logger, c.config.Namespaces, c.config.DeniedNamespaces, func(namespace string) cache.ListerWatcher {
 			return cache.NewListWatchFromClient(c.kclient.CoreV1().RESTClient(), "secrets", namespace, fields.Everything())
 		}),
 		&v1.Secret{}, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
 	)
 
 	c.ssetInf = cache.NewSharedIndexInformer(
-		listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
+		listwatch.MultiNamespaceListerWatcher(c.logger, c.config.Namespaces, c.config.DeniedNamespaces, func(namespace string) cache.ListerWatcher {
 			return cache.NewListWatchFromClient(c.kclient.AppsV1().RESTClient(), "statefulsets", namespace, fields.Everything())
 		}),
 		&appsv1.StatefulSet{}, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
@@ -316,7 +317,7 @@ func New(conf Config, logger log.Logger) (*Operator, error) {
 		nsResyncPeriod = resyncPeriod
 	}
 	c.nsInf = cache.NewSharedIndexInformer(
-		listwatch.NewUnprivilegedNamespaceListWatchFromClient(c.kclient.CoreV1().RESTClient(), c.config.Namespaces, fields.Everything()),
+		listwatch.NewUnprivilegedNamespaceListWatchFromClient(c.logger, c.kclient.CoreV1().RESTClient(), c.config.Namespaces, c.config.DeniedNamespaces, fields.Everything()),
 		&v1.Namespace{}, nsResyncPeriod, cache.Indexers{},
 	)
 
@@ -1609,7 +1610,7 @@ func (c *Operator) createCRDs() error {
 	}{
 		{
 			monitoringv1.PrometheusesKind,
-			listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
+			listwatch.MultiNamespaceListerWatcher(c.logger, c.config.Namespaces, c.config.DeniedNamespaces, func(namespace string) cache.ListerWatcher {
 				return &cache.ListWatch{
 					ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 						return c.mclient.MonitoringV1().Prometheuses(namespace).List(options)
@@ -1619,7 +1620,7 @@ func (c *Operator) createCRDs() error {
 		},
 		{
 			monitoringv1.ServiceMonitorsKind,
-			listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
+			listwatch.MultiNamespaceListerWatcher(c.logger, c.config.Namespaces, c.config.DeniedNamespaces, func(namespace string) cache.ListerWatcher {
 				return &cache.ListWatch{
 					ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 						return c.mclient.MonitoringV1().ServiceMonitors(namespace).List(options)
@@ -1629,7 +1630,7 @@ func (c *Operator) createCRDs() error {
 		},
 		{
 			monitoringv1.PodMonitorsKind,
-			listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
+			listwatch.MultiNamespaceListerWatcher(c.logger, c.config.Namespaces, c.config.DeniedNamespaces, func(namespace string) cache.ListerWatcher {
 				return &cache.ListWatch{
 					ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 						return c.mclient.MonitoringV1().PodMonitors(namespace).List(options)
@@ -1639,7 +1640,7 @@ func (c *Operator) createCRDs() error {
 		},
 		{
 			monitoringv1.PrometheusRuleKind,
-			listwatch.MultiNamespaceListerWatcher(c.config.Namespaces, func(namespace string) cache.ListerWatcher {
+			listwatch.MultiNamespaceListerWatcher(c.logger, c.config.Namespaces, c.config.DeniedNamespaces, func(namespace string) cache.ListerWatcher {
 				return &cache.ListWatch{
 					ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 						return c.mclient.MonitoringV1().PrometheusRules(namespace).List(options)
