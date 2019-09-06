@@ -142,6 +142,10 @@ func makeStatefulSet(am *monitoringv1.Alertmanager, old *appsv1.StatefulSet, con
 		statefulset.Annotations = old.Annotations
 	}
 
+	for _, volume := range am.Spec.Volumes {
+		statefulset.Spec.Template.Spec.Volumes = append(statefulset.Spec.Template.Spec.Volumes, volume)
+	}
+
 	return statefulset, nil
 }
 
@@ -474,6 +478,7 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 				NodeSelector:                  a.Spec.NodeSelector,
 				PriorityClassName:             a.Spec.PriorityClassName,
 				TerminationGracePeriodSeconds: &terminationGracePeriod,
+				InitContainers:                a.Spec.InitContainers,
 				Containers: append([]v1.Container{
 					{
 						Args:           amArgs,

@@ -35,7 +35,7 @@ import (
 const (
 	governingServiceName            = "prometheus-operated"
 	DefaultPrometheusVersion        = "v2.7.1"
-	DefaultThanosVersion            = "v0.5.0"
+	DefaultThanosVersion            = "v0.7.0"
 	defaultRetention                = "24h"
 	defaultReplicaExternalLabelName = "prometheus_replica"
 	storageDir                      = "/prometheus"
@@ -223,6 +223,10 @@ func makeStatefulSet(
 		pvcTemplate.Spec.Resources = storageSpec.VolumeClaimTemplate.Spec.Resources
 		pvcTemplate.Spec.Selector = storageSpec.VolumeClaimTemplate.Spec.Selector
 		statefulset.Spec.VolumeClaimTemplates = append(statefulset.Spec.VolumeClaimTemplates, pvcTemplate)
+	}
+
+	for _, volume := range p.Spec.Volumes {
+		statefulset.Spec.Template.Spec.Volumes = append(statefulset.Spec.Template.Spec.Volumes, volume)
 	}
 
 	return statefulset, nil
@@ -837,6 +841,7 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 			},
 			Spec: v1.PodSpec{
 				Containers:                    containers,
+				InitContainers:                p.Spec.InitContainers,
 				SecurityContext:               securityContext,
 				ServiceAccountName:            p.Spec.ServiceAccountName,
 				NodeSelector:                  p.Spec.NodeSelector,
