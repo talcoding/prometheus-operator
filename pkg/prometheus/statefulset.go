@@ -301,6 +301,15 @@ func makeStatefulSetService(p *monitoringv1.Prometheus, config Config) *v1.Servi
 			},
 		},
 	}
+
+	if p.Spec.Thanos != nil {
+		svc.Spec.Ports = append(svc.Spec.Ports, v1.ServicePort{
+			Name:       "grpc",
+			Port:       10901,
+			TargetPort: intstr.FromString("grpc"),
+		})
+	}
+
 	return svc
 }
 
@@ -587,23 +596,52 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 		fmt.Sprintf("--config-envsubst-file=%s", path.Join(confOutDir, configEnvsubstFilename)),
 	}
 
+	const localProbe = `if [ -x "$(command -v curl)" ]; then curl %s; elif [ -x "$(command -v wget)" ]; then wget -q %s; else exit 1; fi`
+
 	var livenessProbeHandler v1.Handler
 	var readinessProbeHandler v1.Handler
 	var livenessFailureThreshold int32
 	if (version.Major == 1 && version.Minor >= 8) || version.Major == 2 {
-		livenessProbeHandler = v1.Handler{
-			HTTPGet: &v1.HTTPGetAction{
-				Path: path.Clean(webRoutePrefix + "/-/healthy"),
-				Port: intstr.FromString(p.Spec.PortName),
-			},
+		{
+			healthyPath := path.Clean(webRoutePrefix + "/-/healthy")
+			if p.Spec.ListenLocal {
+				localHealthyPath := fmt.Sprintf("http://localhost:9090%s", healthyPath)
+				livenessProbeHandler.Exec = &v1.ExecAction{
+					Command: []string{
+						"sh",
+						"-c",
+						fmt.Sprintf(localProbe, localHealthyPath, localHealthyPath),
+					},
+				}
+			} else {
+				livenessProbeHandler.HTTPGet = &v1.HTTPGetAction{
+					Path: healthyPath,
+					Port: intstr.FromString(p.Spec.PortName),
+				}
+			}
 		}
-		readinessProbeHandler = v1.Handler{
-			HTTPGet: &v1.HTTPGetAction{
-				Path: path.Clean(webRoutePrefix + "/-/ready"),
-				Port: intstr.FromString(p.Spec.PortName),
-			},
+		{
+			readyPath := path.Clean(webRoutePrefix + "/-/ready")
+			if p.Spec.ListenLocal {
+				localReadyPath := fmt.Sprintf("http://localhost:9090%s", readyPath)
+				readinessProbeHandler.Exec = &v1.ExecAction{
+					Command: []string{
+						"sh",
+						"-c",
+						fmt.Sprintf(localProbe, localReadyPath, localReadyPath),
+					},
+				}
+
+			} else {
+				readinessProbeHandler.HTTPGet = &v1.HTTPGetAction{
+					Path: readyPath,
+					Port: intstr.FromString(p.Spec.PortName),
+				}
+			}
 		}
+
 		livenessFailureThreshold = 6
+
 	} else {
 		livenessProbeHandler = v1.Handler{
 			HTTPGet: &v1.HTTPGetAction{
@@ -617,21 +655,17 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 		livenessFailureThreshold = 60
 	}
 
-	var livenessProbe *v1.Probe
-	var readinessProbe *v1.Probe
-	if !p.Spec.ListenLocal {
-		livenessProbe = &v1.Probe{
-			Handler:          livenessProbeHandler,
-			PeriodSeconds:    5,
-			TimeoutSeconds:   probeTimeoutSeconds,
-			FailureThreshold: livenessFailureThreshold,
-		}
-		readinessProbe = &v1.Probe{
-			Handler:          readinessProbeHandler,
-			TimeoutSeconds:   probeTimeoutSeconds,
-			PeriodSeconds:    5,
-			FailureThreshold: 120, // Allow up to 10m on startup for data recovery
-		}
+	livenessProbe := &v1.Probe{
+		Handler:          livenessProbeHandler,
+		PeriodSeconds:    5,
+		TimeoutSeconds:   probeTimeoutSeconds,
+		FailureThreshold: livenessFailureThreshold,
+	}
+	readinessProbe := &v1.Probe{
+		Handler:          readinessProbeHandler,
+		TimeoutSeconds:   probeTimeoutSeconds,
+		PeriodSeconds:    5,
+		FailureThreshold: 120, // Allow up to 10m on startup for data recovery
 	}
 
 	podAnnotations := map[string]string{}
@@ -705,6 +739,10 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 		if p.Spec.Thanos.Image != nil && *p.Spec.Thanos.Image != "" {
 			thanosImage = *p.Spec.Thanos.Image
 		}
+		bindAddress := "[$(POD_IP)]"
+		if p.Spec.Thanos.ListenLocal {
+			bindAddress = "127.0.0.1"
+		}
 
 		container := v1.Container{
 			Name:  "thanos-sidecar",
@@ -713,8 +751,8 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 				"sidecar",
 				fmt.Sprintf("--prometheus.url=http://%s:9090%s", c.LocalHost, path.Clean(webRoutePrefix)),
 				fmt.Sprintf("--tsdb.path=%s", storageDir),
-				"--grpc-address=[$(POD_IP)]:10901",
-				"--http-address=[$(POD_IP)]:10902",
+				fmt.Sprintf("--grpc-address=%s:10901", bindAddress),
+				fmt.Sprintf("--http-address=%s:10902", bindAddress),
 			},
 			Env: []v1.EnvVar{
 				{

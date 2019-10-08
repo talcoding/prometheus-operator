@@ -360,6 +360,9 @@ type ThanosSpec struct {
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 	// ObjectStorageConfig configures object storage in Thanos.
 	ObjectStorageConfig *v1.SecretKeySelector `json:"objectStorageConfig,omitempty"`
+	// ListenLocal makes the Thanos sidecar listen on loopback, so that it
+	// does not bind against the Pod IP.
+	ListenLocal bool `json:"listenLocal,omitempty"`
 }
 
 // RemoteWriteSpec defines the remote_write configuration for prometheus.
@@ -793,6 +796,10 @@ type AlertmanagerSpec struct {
 	// Volumes specified will be appended to other volumes that are generated as a result of
 	// StorageSpec objects.
 	Volumes []v1.Volume `json:"volumes,omitempty"`
+	// VolumeMounts allows configuration of additional VolumeMounts on the output StatefulSet definition.
+	// VolumeMounts specified will be appended to other VolumeMounts in the alertmanager container,
+	// that are generated as a result of StorageSpec objects.
+	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty"`
 	// The external URL the Alertmanager instances will be available under. This is
 	// necessary to generate correct URLs. This is necessary if Alertmanager is not
 	// served from root of a DNS name.

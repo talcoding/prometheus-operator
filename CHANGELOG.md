@@ -1,5 +1,13 @@
 ## Next release
 
+* [BUGFIX] Update prometheus dependency to v2.12.0 to fix validation failure for .externalLabels admission webhook (#2774)
+
+## 0.33.0 / 2019-09-12
+
+* [FEATURE] Add Thanos service port to governing service (#2754)
+* [FEATURE] Add VolumeMounts to Alertmanager (#2755)
+* [ENHANCEMENT] Bump default thanos image and version (#2746)
+
 ## 0.32.0 / 2019-08-30
 
 * [CHANGE] Change PodManagement policy to parallel in Alertmanager (#2676)

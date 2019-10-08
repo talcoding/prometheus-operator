@@ -131,6 +131,7 @@ AlertmanagerSpec is a specification of the desired behavior of the Alertmanager 
 | retention | Time duration Alertmanager shall retain data for. Default is '120h', and must match the regular expression `[0-9]+(ms\|s\|m\|h)` (milliseconds seconds minutes hours). | string | false |
 | storage | Storage is the definition of how storage will be used by the Alertmanager instances. | *[StorageSpec](#storagespec) | false |
 | volumes | Volumes allows configuration of additional volumes on the output StatefulSet definition. Volumes specified will be appended to other volumes that are generated as a result of StorageSpec objects. | []v1.Volume | false |
+| volumeMounts | VolumeMounts allows configuration of additional VolumeMounts on the output StatefulSet definition. VolumeMounts specified will be appended to other VolumeMounts in the alertmanager container, that are generated as a result of StorageSpec objects. | []v1.VolumeMount | false |
 | externalUrl | The external URL the Alertmanager instances will be available under. This is necessary to generate correct URLs. This is necessary if Alertmanager is not served from root of a DNS name. | string | false |
 | routePrefix | The route prefix Alertmanager registers HTTP handlers for. This is useful, if using ExternalURL and a proxy is rewriting HTTP routes of a request, and the actual ExternalURL is still true, but the server serves requests under a different route prefix. For example for use with `kubectl proxy`. | string | false |
 | paused | If set to true all actions on the underlaying managed objects are not goint to be performed, except for delete actions. | bool | false |
@@ -603,5 +604,6 @@ ThanosSpec defines parameters for a Prometheus server within a Thanos deployment
 | baseImage | Thanos base image if other than default. | *string | false |
 | resources | Resources defines the resource requirements for the Thanos sidecar. If not provided, no requests/limits will be set | [v1.ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#resourcerequirements-v1-core) | false |
 | objectStorageConfig | ObjectStorageConfig configures object storage in Thanos. | *[v1.SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#secretkeyselector-v1-core) | false |
+| listenLocal | ListenLocal makes the Thanos sidecar listen on loopback, so that it does not bind against the Pod IP. | bool | false |
 
 [Back to TOC](#table-of-contents)
