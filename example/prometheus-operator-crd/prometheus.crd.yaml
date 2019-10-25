@@ -694,18 +694,40 @@ spec:
                       tlsConfig:
                         description: TLSConfig specifies TLS configuration parameters.
                         properties:
+                          ca: {}
                           caFile:
-                            description: The CA cert to use for the targets.
+                            description: Path to the CA cert in the Prometheus container
+                              to use for the targets.
                             type: string
+                          cert: {}
                           certFile:
-                            description: The client cert file for the targets.
+                            description: Path to the client cert file in the Prometheus
+                              container for the targets.
                             type: string
                           insecureSkipVerify:
                             description: Disable target certificate validation.
                             type: boolean
                           keyFile:
-                            description: The client key file for the targets.
+                            description: Path to the client key file in the Prometheus
+                              container for the targets.
                             type: string
+                          keySecret:
+                            description: SecretKeySelector selects a key of a Secret.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
                           serverName:
                             description: Used to verify the hostname for the targets.
                             type: string
@@ -775,18 +797,40 @@ spec:
                 tlsConfig:
                   description: TLSConfig specifies TLS configuration parameters.
                   properties:
+                    ca: {}
                     caFile:
-                      description: The CA cert to use for the targets.
+                      description: Path to the CA cert in the Prometheus container
+                        to use for the targets.
                       type: string
+                    cert: {}
                     certFile:
-                      description: The client cert file for the targets.
+                      description: Path to the client cert file in the Prometheus
+                        container for the targets.
                       type: string
                     insecureSkipVerify:
                       description: Disable target certificate validation.
                       type: boolean
                     keyFile:
-                      description: The client key file for the targets.
+                      description: Path to the client key file in the Prometheus container
+                        for the targets.
                       type: string
+                    keySecret:
+                      description: SecretKeySelector selects a key of a Secret.
+                      properties:
+                        key:
+                          description: The key of the secret to select from.  Must
+                            be a valid secret key.
+                          type: string
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                          type: string
+                        optional:
+                          description: Specify whether the Secret or its key must
+                            be defined
+                          type: boolean
+                      required:
+                      - key
+                      type: object
                     serverName:
                       description: Used to verify the hostname for the targets.
                       type: string
@@ -794,6 +838,7 @@ spec:
               required:
               - host
               type: object
+            arbitraryFSAccessThroughSMs: {}
             baseImage:
               description: Base image to use for a Prometheus deployment.
               type: string
@@ -1775,6 +1820,11 @@ spec:
                 authentication authorization via a proxy to ensure only clients authorized
                 to perform these actions can do so. For more information see https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-admin-apis'
               type: boolean
+            enforcedNamespaceLabel:
+              description: EnforcedNamespaceLabel enforces adding a namespace label
+                of origin for each alert and metric that is user created. The label
+                value will always be the namespace of the object that is being created.
+              type: string
             evaluationInterval:
               description: Interval between consecutive evaluations.
               type: string
@@ -1787,6 +1837,12 @@ spec:
                 under. This is necessary to generate correct URLs. This is necessary
                 if Prometheus is not served from root of a DNS name.
               type: string
+            ignoreNamespaceSelectors:
+              description: IgnoreNamespaceSelectors if set to true will ignore NamespaceSelector
+                settings from the podmonitor and servicemonitor configs, and they
+                will only discover endpoints within their current namespace.  Defaults
+                to false.
+              type: boolean
             image:
               description: Image if specified has precedence over baseImage, tag and
                 sha combinations. Specifying the version is still necessary to ensure
@@ -2781,6 +2837,15 @@ spec:
             nodeSelector:
               description: Define which Nodes the Pods are scheduled on.
               type: object
+            overrideHonorLabels:
+              description: OverrideHonorLabels if set to true overrides all user configured
+                honor_labels. If HonorLabels is set in ServiceMonitor or PodMonitor
+                to true, this overrides honor_labels to false.
+              type: boolean
+            overrideHonorTimestamps:
+              description: OverrideHonorTimestamps allows to globally enforce honoring
+                timestamps in all scrape configs.
+              type: boolean
             paused:
               description: When a Prometheus deployment is paused, no actions except
                 for deletion will be performed on the underlying objects.
@@ -3163,18 +3228,40 @@ spec:
                   tlsConfig:
                     description: TLSConfig specifies TLS configuration parameters.
                     properties:
+                      ca: {}
                       caFile:
-                        description: The CA cert to use for the targets.
+                        description: Path to the CA cert in the Prometheus container
+                          to use for the targets.
                         type: string
+                      cert: {}
                       certFile:
-                        description: The client cert file for the targets.
+                        description: Path to the client cert file in the Prometheus
+                          container for the targets.
                         type: string
                       insecureSkipVerify:
                         description: Disable target certificate validation.
                         type: boolean
                       keyFile:
-                        description: The client key file for the targets.
+                        description: Path to the client key file in the Prometheus
+                          container for the targets.
                         type: string
+                      keySecret:
+                        description: SecretKeySelector selects a key of a Secret.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
                       serverName:
                         description: Used to verify the hostname for the targets.
                         type: string
@@ -3289,18 +3376,40 @@ spec:
                   tlsConfig:
                     description: TLSConfig specifies TLS configuration parameters.
                     properties:
+                      ca: {}
                       caFile:
-                        description: The CA cert to use for the targets.
+                        description: Path to the CA cert in the Prometheus container
+                          to use for the targets.
                         type: string
+                      cert: {}
                       certFile:
-                        description: The client cert file for the targets.
+                        description: Path to the client cert file in the Prometheus
+                          container for the targets.
                         type: string
                       insecureSkipVerify:
                         description: Disable target certificate validation.
                         type: boolean
                       keyFile:
-                        description: The client key file for the targets.
+                        description: Path to the client key file in the Prometheus
+                          container for the targets.
                         type: string
+                      keySecret:
+                        description: SecretKeySelector selects a key of a Secret.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
                       serverName:
                         description: Used to verify the hostname for the targets.
                         type: string
@@ -5396,7 +5505,7 @@ spec:
         status:
           description: 'PrometheusStatus is the most recent observed status of the
             Prometheus cluster. Read-only. Not included when requesting from the apiserver,
-            only from the Prometheus Operator API itself. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status'
+            only from the Prometheus Operator API itself. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status'
           properties:
             availableReplicas:
               description: Total number of available pods (ready for at least minReadySeconds)

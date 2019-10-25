@@ -41,6 +41,7 @@ const (
 	storageDir                      = "/prometheus"
 	confDir                         = "/etc/prometheus/config"
 	confOutDir                      = "/etc/prometheus/config_out"
+	tlsAssetsDir                    = "/etc/prometheus/certs"
 	rulesDir                        = "/etc/prometheus/rules"
 	secretsDir                      = "/etc/prometheus/secrets/"
 	configmapsDir                   = "/etc/prometheus/configmaps/"
@@ -497,6 +498,14 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 			},
 		},
 		{
+			Name: "tls-assets",
+			VolumeSource: v1.VolumeSource{
+				Secret: &v1.SecretVolumeSource{
+					SecretName: tlsAssetsSecretName(p.Name),
+				},
+			},
+		},
+		{
 			Name: "config-out",
 			VolumeSource: v1.VolumeSource{
 				EmptyDir: &v1.EmptyDirVolumeSource{},
@@ -529,6 +538,11 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 			Name:      "config-out",
 			ReadOnly:  true,
 			MountPath: confOutDir,
+		},
+		{
+			Name:      "tls-assets",
+			ReadOnly:  true,
+			MountPath: tlsAssetsDir,
 		},
 		{
 			Name:      volName,
@@ -697,8 +711,9 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 			Args: []string{
 				fmt.Sprintf("--webhook-url=%s", localReloadURL),
 			},
-			VolumeMounts: []v1.VolumeMount{},
-			Resources:    v1.ResourceRequirements{Limits: v1.ResourceList{}},
+			VolumeMounts:             []v1.VolumeMount{},
+			Resources:                v1.ResourceRequirements{Limits: v1.ResourceList{}},
+			TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
 		}
 
 		if c.ConfigReloaderCPU != "0" {
@@ -745,8 +760,9 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 		}
 
 		container := v1.Container{
-			Name:  "thanos-sidecar",
-			Image: thanosImage,
+			Name:                     "thanos-sidecar",
+			Image:                    thanosImage,
+			TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
 			Args: []string{
 				"sidecar",
 				fmt.Sprintf("--prometheus.url=http://%s:9090%s", c.LocalHost, path.Clean(webRoutePrefix)),
@@ -830,17 +846,19 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 
 	operatorContainers := append([]v1.Container{
 		{
-			Name:           "prometheus",
-			Image:          prometheusImage,
-			Ports:          ports,
-			Args:           promArgs,
-			VolumeMounts:   promVolumeMounts,
-			LivenessProbe:  livenessProbe,
-			ReadinessProbe: readinessProbe,
-			Resources:      p.Spec.Resources,
+			Name:                     "prometheus",
+			Image:                    prometheusImage,
+			Ports:                    ports,
+			Args:                     promArgs,
+			VolumeMounts:             promVolumeMounts,
+			LivenessProbe:            livenessProbe,
+			ReadinessProbe:           readinessProbe,
+			Resources:                p.Spec.Resources,
+			TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
 		}, {
-			Name:  "prometheus-config-reloader",
-			Image: c.PrometheusConfigReloaderImage,
+			Name:                     "prometheus-config-reloader",
+			Image:                    c.PrometheusConfigReloaderImage,
+			TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
 			Env: []v1.EnvVar{
 				{
 					Name: "POD_NAME",
@@ -895,6 +913,10 @@ func makeStatefulSetSpec(p monitoringv1.Prometheus, c *Config, ruleConfigMapName
 
 func configSecretName(name string) string {
 	return prefixedName(name)
+}
+
+func tlsAssetsSecretName(name string) string {
+	return fmt.Sprintf("%s-tls-assets", prefixedName(name))
 }
 
 func volumeName(name string) string {

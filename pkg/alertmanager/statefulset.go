@@ -81,6 +81,9 @@ func makeStatefulSet(am *monitoringv1.Alertmanager, old *appsv1.StatefulSet, con
 	if _, ok := am.Spec.Resources.Requests[v1.ResourceMemory]; !ok {
 		am.Spec.Resources.Requests[v1.ResourceMemory] = resource.MustParse("200Mi")
 	}
+	if am.Spec.ConfigSecret == "" {
+		am.Spec.ConfigSecret = configSecretName(am.Name)
+	}
 
 	spec, err := makeStatefulSetSpec(am, config)
 	if err != nil {
@@ -388,7 +391,7 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 			Name: "config-volume",
 			VolumeSource: v1.VolumeSource{
 				Secret: &v1.SecretVolumeSource{
-					SecretName: configSecretName(a.Name),
+					SecretName: a.Spec.ConfigSecret,
 				},
 			},
 		},
@@ -503,6 +506,7 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 								},
 							},
 						},
+						TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
 					}, {
 						Name:  "config-reloader",
 						Image: config.ConfigReloaderImage,
@@ -517,7 +521,8 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 								MountPath: alertmanagerConfDir,
 							},
 						},
-						Resources: resources,
+						Resources:                resources,
+						TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
 					},
 				}, a.Spec.Containers...),
 				Volumes:            volumes,

@@ -418,13 +418,13 @@ func schema_pkg_apis_monitoring_v1_Alertmanager(ref common.ReferenceCallback) co
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Specification of the desired behavior of the Alertmanager cluster. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status",
+							Description: "Specification of the desired behavior of the Alertmanager cluster. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status",
 							Ref:         ref("github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.AlertmanagerSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Most recent observed status of the Alertmanager cluster. Read-only. Not included when requesting from the apiserver, only from the Prometheus Operator API itself. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status",
+							Description: "Most recent observed status of the Alertmanager cluster. Read-only. Not included when requesting from the apiserver, only from the Prometheus Operator API itself. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status",
 							Ref:         ref("github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.AlertmanagerStatus"),
 						},
 					},
@@ -523,7 +523,7 @@ func schema_pkg_apis_monitoring_v1_AlertmanagerList(ref common.ReferenceCallback
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Standard list metadata More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#metadata",
+							Description: "Standard list metadata More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
 						},
 					},
@@ -553,12 +553,12 @@ func schema_pkg_apis_monitoring_v1_AlertmanagerSpec(ref common.ReferenceCallback
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "AlertmanagerSpec is a specification of the desired behavior of the Alertmanager cluster. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status",
+				Description: "AlertmanagerSpec is a specification of the desired behavior of the Alertmanager cluster. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"podMetadata": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Standard object’s metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#metadata Metadata Labels and Annotations gets propagated to the prometheus pods.",
+							Description: "Standard object’s metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata Metadata Labels and Annotations gets propagated to the prometheus pods.",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 						},
 					},
@@ -636,6 +636,13 @@ func schema_pkg_apis_monitoring_v1_AlertmanagerSpec(ref common.ReferenceCallback
 									},
 								},
 							},
+						},
+					},
+					"configSecret": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ConfigSecret is the name of a Kubernetes Secret in the same namespace as the Alertmanager object, which contains configuration for this Alertmanager instance. Defaults to 'alertmanager-<alertmanager-name>' The secret is mounted into /etc/alertmanager/config.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"logLevel": {
@@ -845,7 +852,7 @@ func schema_pkg_apis_monitoring_v1_AlertmanagerStatus(ref common.ReferenceCallba
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "AlertmanagerStatus is the most recent observed status of the Alertmanager cluster. Read-only. Not included when requesting from the apiserver, only from the Prometheus Operator API itself. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status",
+				Description: "AlertmanagerStatus is the most recent observed status of the Alertmanager cluster. Read-only. Not included when requesting from the apiserver, only from the Prometheus Operator API itself. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"paused": {
@@ -899,13 +906,13 @@ func schema_pkg_apis_monitoring_v1_BasicAuth(ref common.ReferenceCallback) commo
 				Properties: map[string]spec.Schema{
 					"username": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The secret that contains the username for authenticate",
+							Description: "The secret in the service monitor namespace that contains the username for authentication.",
 							Ref:         ref("k8s.io/api/core/v1.SecretKeySelector"),
 						},
 					},
 					"password": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The secret that contains the password for authenticate",
+							Description: "The secret in the service monitor namespace that contains the password for authentication.",
 							Ref:         ref("k8s.io/api/core/v1.SecretKeySelector"),
 						},
 					},
@@ -1000,9 +1007,22 @@ func schema_pkg_apis_monitoring_v1_Endpoint(ref common.ReferenceCallback) common
 							Format:      "",
 						},
 					},
+					"bearerTokenSecret": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Secret to mount to read bearer token for scraping targets. The secret needs to be in the same namespace as the service monitor and accessible by the Prometheus Operator.",
+							Ref:         ref("k8s.io/api/core/v1.SecretKeySelector"),
+						},
+					},
 					"honorLabels": {
 						SchemaProps: spec.SchemaProps{
 							Description: "HonorLabels chooses the metric's labels on collisions with target labels.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"honorTimestamps": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HonorTimestamps controls whether Prometheus respects the timestamps present in scraped data.",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -1050,7 +1070,7 @@ func schema_pkg_apis_monitoring_v1_Endpoint(ref common.ReferenceCallback) common
 			},
 		},
 		Dependencies: []string{
-			"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.BasicAuth", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.RelabelConfig", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.TLSConfig", "k8s.io/apimachinery/pkg/util/intstr.IntOrString"},
+			"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.BasicAuth", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.RelabelConfig", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.TLSConfig", "k8s.io/api/core/v1.SecretKeySelector", "k8s.io/apimachinery/pkg/util/intstr.IntOrString"},
 	}
 }
 
@@ -1165,6 +1185,13 @@ func schema_pkg_apis_monitoring_v1_PodMetricsEndpoint(ref common.ReferenceCallba
 							Format:      "",
 						},
 					},
+					"honorTimestamps": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HonorTimestamps controls whether Prometheus respects the timestamps present in scraped data.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 					"metricRelabelings": {
 						SchemaProps: spec.SchemaProps{
 							Description: "MetricRelabelConfigs to apply to samples before ingestion.",
@@ -1265,7 +1292,7 @@ func schema_pkg_apis_monitoring_v1_PodMonitorList(ref common.ReferenceCallback) 
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Standard list metadata More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#metadata",
+							Description: "Standard list metadata More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
 						},
 					},
@@ -1383,13 +1410,13 @@ func schema_pkg_apis_monitoring_v1_Prometheus(ref common.ReferenceCallback) comm
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Specification of the desired behavior of the Prometheus cluster. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status",
+							Description: "Specification of the desired behavior of the Prometheus cluster. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status",
 							Ref:         ref("github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.PrometheusSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Most recent observed status of the Prometheus cluster. Read-only. Not included when requesting from the apiserver, only from the Prometheus Operator API itself. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status",
+							Description: "Most recent observed status of the Prometheus cluster. Read-only. Not included when requesting from the apiserver, only from the Prometheus Operator API itself. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status",
 							Ref:         ref("github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.PrometheusStatus"),
 						},
 					},
@@ -1425,7 +1452,7 @@ func schema_pkg_apis_monitoring_v1_PrometheusList(ref common.ReferenceCallback) 
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Standard list metadata More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#metadata",
+							Description: "Standard list metadata More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
 						},
 					},
@@ -1474,7 +1501,7 @@ func schema_pkg_apis_monitoring_v1_PrometheusRule(ref common.ReferenceCallback) 
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Standard object’s metadata. More info: http://releases.k8s.io/HEAD/docs/devel/api-conventions.md#metadata",
+							Description: "Standard object’s metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 						},
 					},
@@ -1516,7 +1543,7 @@ func schema_pkg_apis_monitoring_v1_PrometheusRuleList(ref common.ReferenceCallba
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Standard list metadata More info: http://releases.k8s.io/HEAD/docs/devel/api-conventions.md#metadata",
+							Description: "Standard list metadata More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
 						},
 					},
@@ -1579,7 +1606,7 @@ func schema_pkg_apis_monitoring_v1_PrometheusSpec(ref common.ReferenceCallback) 
 				Properties: map[string]spec.Schema{
 					"podMetadata": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Standard object’s metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#metadata Metadata Labels and Annotations gets propagated to the prometheus pods.",
+							Description: "Standard object’s metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata Metadata Labels and Annotations gets propagated to the prometheus pods.",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 						},
 					},
@@ -2001,11 +2028,45 @@ func schema_pkg_apis_monitoring_v1_PrometheusSpec(ref common.ReferenceCallback) 
 							Format:      "",
 						},
 					},
+					"arbitraryFSAccessThroughSMs": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ArbitraryFSAccessThroughSMs configures whether configuration based on a service monitor can access arbitrary files on the file system of the Prometheus container e.g. bearer token files.",
+							Ref:         ref("github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.ArbitraryFSAccessThroughSMsConfig"),
+						},
+					},
+					"overrideHonorLabels": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OverrideHonorLabels if set to true overrides all user configured honor_labels. If HonorLabels is set in ServiceMonitor or PodMonitor to true, this overrides honor_labels to false.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"overrideHonorTimestamps": {
+						SchemaProps: spec.SchemaProps{
+							Description: "OverrideHonorTimestamps allows to globally enforce honoring timestamps in all scrape configs.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"ignoreNamespaceSelectors": {
+						SchemaProps: spec.SchemaProps{
+							Description: "IgnoreNamespaceSelectors if set to true will ignore NamespaceSelector settings from the podmonitor and servicemonitor configs, and they will only discover endpoints within their current namespace.  Defaults to false.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"enforcedNamespaceLabel": {
+						SchemaProps: spec.SchemaProps{
+							Description: "EnforcedNamespaceLabel enforces adding a namespace label of origin for each alert and metric that is user created. The label value will always be the namespace of the object that is being created.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.APIServerConfig", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.AlertingSpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.QuerySpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.RemoteReadSpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.RemoteWriteSpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.Rules", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.StorageSpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.ThanosSpec", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PodSecurityContext", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.SecretKeySelector", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.Volume", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.APIServerConfig", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.AlertingSpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.ArbitraryFSAccessThroughSMsConfig", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.QuerySpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.RemoteReadSpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.RemoteWriteSpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.Rules", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.StorageSpec", "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.ThanosSpec", "k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.Container", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PodSecurityContext", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.SecretKeySelector", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.Volume", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -2013,7 +2074,7 @@ func schema_pkg_apis_monitoring_v1_PrometheusStatus(ref common.ReferenceCallback
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "PrometheusStatus is the most recent observed status of the Prometheus cluster. Read-only. Not included when requesting from the apiserver, only from the Prometheus Operator API itself. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status",
+				Description: "PrometheusStatus is the most recent observed status of the Prometheus cluster. Read-only. Not included when requesting from the apiserver, only from the Prometheus Operator API itself. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"paused": {
@@ -2624,7 +2685,7 @@ func schema_pkg_apis_monitoring_v1_ServiceMonitorList(ref common.ReferenceCallba
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Standard list metadata More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#metadata",
+							Description: "Standard list metadata More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
 						},
 					},
@@ -2769,23 +2830,41 @@ func schema_pkg_apis_monitoring_v1_TLSConfig(ref common.ReferenceCallback) commo
 				Properties: map[string]spec.Schema{
 					"caFile": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The CA cert to use for the targets.",
+							Description: "Path to the CA cert in the Prometheus container to use for the targets.",
 							Type:        []string{"string"},
 							Format:      "",
+						},
+					},
+					"ca": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Stuct containing the CA cert to use for the targets.",
+							Ref:         ref("github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.SecretOrConfigMap"),
 						},
 					},
 					"certFile": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The client cert file for the targets.",
+							Description: "Path to the client cert file in the Prometheus container for the targets.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
+					"cert": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Struct containing the client cert file for the targets.",
+							Ref:         ref("github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.SecretOrConfigMap"),
+						},
+					},
 					"keyFile": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The client key file for the targets.",
+							Description: "Path to the client key file in the Prometheus container for the targets.",
 							Type:        []string{"string"},
 							Format:      "",
+						},
+					},
+					"keySecret": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Secret containing the client key file for the targets.",
+							Ref:         ref("k8s.io/api/core/v1.SecretKeySelector"),
 						},
 					},
 					"serverName": {
@@ -2805,6 +2884,8 @@ func schema_pkg_apis_monitoring_v1_TLSConfig(ref common.ReferenceCallback) commo
 				},
 			},
 		},
+		Dependencies: []string{
+			"github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1.SecretOrConfigMap", "k8s.io/api/core/v1.SecretKeySelector"},
 	}
 }
 

@@ -25,7 +25,7 @@ spec:
           type: string
         spec:
           description: 'AlertmanagerSpec is a specification of the desired behavior
-            of the Alertmanager cluster. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status'
+            of the Alertmanager cluster. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status'
           properties:
             additionalPeers:
               description: AdditionalPeers allows injecting a set of additional Alertmanagers
@@ -627,6 +627,12 @@ spec:
               items:
                 type: string
               type: array
+            configSecret:
+              description: ConfigSecret is the name of a Kubernetes Secret in the
+                same namespace as the Alertmanager object, which contains configuration
+                for this Alertmanager instance. Defaults to 'alertmanager-<alertmanager-name>'
+                The secret is mounted into /etc/alertmanager/config.
+              type: string
             containers:
               description: Containers allows injecting additional containers. This
                 is meant to allow adding an authentication proxy to an Alertmanager
@@ -4587,7 +4593,7 @@ spec:
         status:
           description: 'AlertmanagerStatus is the most recent observed status of the
             Alertmanager cluster. Read-only. Not included when requesting from the
-            apiserver, only from the Prometheus Operator API itself. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status'
+            apiserver, only from the Prometheus Operator API itself. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status'
           properties:
             availableReplicas:
               description: Total number of available pods (ready for at least minReadySeconds)

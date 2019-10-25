@@ -186,6 +186,14 @@ func TestStatefulSetVolumeInitial(t *testing.T) {
 									SubPath:   "",
 								},
 								{
+									Name:             "tls-assets",
+									ReadOnly:         true,
+									MountPath:        "/etc/prometheus/certs",
+									SubPath:          "",
+									MountPropagation: nil,
+									SubPathExpr:      "",
+								},
+								{
 									Name:      "prometheus-volume-init-test-db",
 									ReadOnly:  false,
 									MountPath: "/prometheus",
@@ -212,6 +220,14 @@ func TestStatefulSetVolumeInitial(t *testing.T) {
 							VolumeSource: v1.VolumeSource{
 								Secret: &v1.SecretVolumeSource{
 									SecretName: configSecretName("volume-init-test"),
+								},
+							},
+						},
+						{
+							Name: "tls-assets",
+							VolumeSource: v1.VolumeSource{
+								Secret: &v1.SecretVolumeSource{
+									SecretName: tlsAssetsSecretName("volume-init-test"),
 								},
 							},
 						},
@@ -903,5 +919,18 @@ func TestThanosListenLocal(t *testing.T) {
 
 	if !foundGrpcFlag || !foundHTTPFlag {
 		t.Fatal("Thanos not listening on loopback when it should.")
+	}
+}
+
+func TestTerminationPolicy(t *testing.T) {
+	sset, err := makeStatefulSet(monitoringv1.Prometheus{Spec: monitoringv1.PrometheusSpec{}}, defaultTestConfig, nil, "")
+	if err != nil {
+		t.Fatalf("Unexpected error while making StatefulSet: %v", err)
+	}
+
+	for _, c := range sset.Spec.Template.Spec.Containers {
+		if c.TerminationMessagePolicy != v1.TerminationMessageFallbackToLogsOnError {
+			t.Fatalf("Unexpected TermintationMessagePolicy. Expected %v got %v", v1.TerminationMessageFallbackToLogsOnError, c.TerminationMessagePolicy)
+		}
 	}
 }
