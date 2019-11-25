@@ -22,7 +22,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: v0.33.0
+    app.kubernetes.io/version: v0.34.0
   name: prometheus-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -39,7 +39,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: v0.33.0
+    app.kubernetes.io/version: v0.34.0
   name: prometheus-operator
 rules:
 - apiGroups:
@@ -113,7 +113,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: v0.33.0
+    app.kubernetes.io/version: v0.34.0
   name: prometheus-operator
   namespace: default
 spec:
@@ -127,15 +127,15 @@ spec:
       labels:
         app.kubernetes.io/component: controller
         app.kubernetes.io/name: prometheus-operator
-        app.kubernetes.io/version: v0.33.0
+        app.kubernetes.io/version: v0.34.0
     spec:
       containers:
       - args:
         - --kubelet-service=kube-system/kubelet
         - --logtostderr=true
         - --config-reloader-image=quay.io/coreos/configmap-reload:v0.0.1
-        - --prometheus-config-reloader=quay.io/coreos/prometheus-config-reloader:v0.33.0
-        image: quay.io/coreos/prometheus-operator:v0.33.0
+        - --prometheus-config-reloader=quay.io/coreos/prometheus-config-reloader:v0.34.0
+        image: quay.io/coreos/prometheus-operator:v0.34.0
         name: prometheus-operator
         ports:
         - containerPort: 8080
@@ -162,7 +162,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: v0.33.0
+    app.kubernetes.io/version: v0.34.0
   name: prometheus-operator
   namespace: default
 ---
@@ -172,7 +172,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: v0.33.0
+    app.kubernetes.io/version: v0.34.0
   name: prometheus-operator
   namespace: default
 spec:
@@ -322,7 +322,7 @@ For more information, see the [Prometheus Operator RBAC guide][prom-rbac].
 
 A Prometheus object defines the `serviceMonitorSelector` to specify which ServiceMonitors should be included. Above the label `team: frontend` was specified, so that's what the Prometheus object selects by.
 
-[embedmd]:# (../../example/user-guides/getting-started/prometheus.yaml)
+[embedmd]:# (../../example/user-guides/getting-started/prometheus-service-monitor.yaml)
 ```yaml
 apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
@@ -347,7 +347,7 @@ This enables the frontend team to create new ServiceMonitors and Services which 
 
 Finally, a Prometheus object defines the `podMonitorSelector` to specify which PodMonitors should be included. Above the label `team: frontend` was specified, so that's what the Prometheus object selects by.
 
-[embedmd]:# (../../example/user-guides/getting-started/prometheus.yaml)
+[embedmd]:# (../../example/user-guides/getting-started/prometheus-pod-monitor.yaml)
 ```yaml
 apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
@@ -355,7 +355,7 @@ metadata:
   name: prometheus
 spec:
   serviceAccountName: prometheus
-  serviceMonitorSelector:
+  podMonitorSelector:
     matchLabels:
       team: frontend
   resources:
@@ -404,7 +404,7 @@ This API access is disabled by default and can be toggled using this boolean fla
 > user is advised to add additional authentication authorization via a proxy to
 > ensure only clients authorized to perform these actions can do so.
 
-[embedmd]:# (../../example/user-guides/getting-started/prometheus.yaml)
+[embedmd]:# (../../example/user-guides/getting-started/prometheus-admin-api.yaml)
 ```yaml
 apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
@@ -418,18 +418,15 @@ spec:
   resources:
     requests:
       memory: 400Mi
-  enableAdminAPI: false
+  enableAdminAPI: true
 ```
 
 Further reading:
 
 * [Alerting][alerting-guide] describes using the Prometheus Operator go manage Alertmanager clusters.
 
-* [Cluster Monitoring ][cluster-monitoring] describes using the Prometheus Operator to monitor the Kubernetes cluster itself.
-
 
 [alerting-guide]: alerting.md
-[cluster-monitoring]: cluster-monitoring.md
 [design-doc]: ../design.md
 [exposing-prom]: exposing-prometheus-and-alertmanager.md
 [introducing-operators]: https://coreos.com/blog/introducing-operators.html

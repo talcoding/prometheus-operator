@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	monitoring "github.com/coreos/prometheus-operator/pkg/apis/monitoring"
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoringclient "github.com/coreos/prometheus-operator/pkg/client/versioned"
 	"github.com/coreos/prometheus-operator/pkg/k8sutil"
@@ -66,6 +67,7 @@ type Operator struct {
 
 	reconcileErrorsCounter *prometheus.CounterVec
 	triggerByCounter       *prometheus.CounterVec
+	stsDeleteCreateCounter *prometheus.CounterVec
 
 	config Config
 }
@@ -80,7 +82,6 @@ type Config struct {
 	Namespaces                   prometheusoperator.Namespaces
 	Labels                       prometheusoperator.Labels
 	CrdKinds                     monitoringv1.CrdKinds
-	CrdGroup                     string
 	EnableValidation             bool
 	ManageCRDs                   bool
 	AlertManagerSelector         string
@@ -122,7 +123,6 @@ func New(c prometheusoperator.Config, logger log.Logger) (*Operator, error) {
 			ConfigReloaderMemory:         c.ConfigReloaderMemory,
 			AlertmanagerDefaultBaseImage: c.AlertmanagerDefaultBaseImage,
 			Namespaces:                   c.Namespaces,
-			CrdGroup:                     c.CrdGroup,
 			CrdKinds:                     c.CrdKinds,
 			Labels:                       c.Labels,
 			EnableValidation:             c.EnableValidation,
@@ -156,9 +156,10 @@ func New(c prometheusoperator.Config, logger log.Logger) (*Operator, error) {
 	return o, nil
 }
 
-func (c *Operator) RegisterMetrics(r prometheus.Registerer, reconcileErrorsCounter *prometheus.CounterVec, triggerByCounter *prometheus.CounterVec) {
+func (c *Operator) RegisterMetrics(r prometheus.Registerer, reconcileErrorsCounter *prometheus.CounterVec, triggerByCounter *prometheus.CounterVec, stsDeleteCreateCounter *prometheus.CounterVec) {
 	c.reconcileErrorsCounter = reconcileErrorsCounter
 	c.triggerByCounter = triggerByCounter
+	c.stsDeleteCreateCounter = stsDeleteCreateCounter
 
 	c.reconcileErrorsCounter.With(prometheus.Labels{}).Add(0)
 
@@ -495,7 +496,8 @@ func (c *Operator) sync(key string) error {
 	sErr, ok := err.(*apierrors.StatusError)
 
 	if ok && sErr.ErrStatus.Code == 422 && sErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
-		level.Debug(c.logger).Log("msg", "resolving illegal update of Alertmanager StatefulSet")
+		c.stsDeleteCreateCounter.With(prometheus.Labels{}).Inc()
+		level.Info(c.logger).Log("msg", "resolving illegal update of Alertmanager StatefulSet", "details", sErr.ErrStatus.Details)
 		propagationPolicy := metav1.DeletePropagationForeground
 		if err := ssetClient.Delete(sset.GetName(), &metav1.DeleteOptions{PropagationPolicy: &propagationPolicy}); err != nil {
 			return errors.Wrap(err, "failed to delete StatefulSet to avoid forbidden action")
@@ -618,7 +620,7 @@ func (c *Operator) destroyAlertmanager(key string) error {
 
 func (c *Operator) createCRDs() error {
 	crds := []*extensionsobj.CustomResourceDefinition{
-		k8sutil.NewCustomResourceDefinition(c.config.CrdKinds.Alertmanager, c.config.CrdGroup, c.config.Labels.LabelsMap, c.config.EnableValidation),
+		k8sutil.NewCustomResourceDefinition(c.config.CrdKinds.Alertmanager, monitoring.GroupName, c.config.Labels.LabelsMap, c.config.EnableValidation),
 	}
 
 	crdClient := c.crdclient.ApiextensionsV1beta1().CustomResourceDefinitions()

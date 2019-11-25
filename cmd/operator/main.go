@@ -30,7 +30,6 @@ import (
 	"github.com/coreos/prometheus-operator/pkg/admission"
 	alertmanagercontroller "github.com/coreos/prometheus-operator/pkg/alertmanager"
 	"github.com/coreos/prometheus-operator/pkg/api"
-	"github.com/coreos/prometheus-operator/pkg/apis/monitoring"
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	prometheuscontroller "github.com/coreos/prometheus-operator/pkg/prometheus"
 	"github.com/coreos/prometheus-operator/pkg/version"
@@ -144,7 +143,6 @@ func init() {
 	flagset.Var(prometheusNs, "prometheus-instance-namespaces", "Namespaces where Prometheus custom resources and corresponding Secrets, Configmaps and StatefulSets are watched/created. If set this takes precedence over --namespaces or --deny-namespaces for Prometheus custom resources.")
 	flagset.Var(alertmanagerNs, "alertmanager-instance-namespaces", "Namespaces where Alertmanager custom resources and corresponding StatefulSets are watched/created. If set this takes precedence over --namespaces or --deny-namespaces for Alertmanager custom resources.")
 	flagset.Var(&cfg.Labels, "labels", "Labels to be add to all resources created by the operator")
-	flagset.StringVar(&cfg.CrdGroup, "crd-apigroup", monitoring.GroupName, "prometheus CRD  API group name")
 	flagset.Var(&cfg.CrdKinds, "crd-kinds", " - EXPERIMENTAL (could be removed in future releases) - customize CRD kind names")
 	flagset.BoolVar(&cfg.EnableValidation, "with-validation", true, "Include the validation spec in the CRD")
 	flagset.StringVar(&cfg.LocalHost, "localhost", "localhost", "EXPERIMENTAL (could be removed in future releases) - Host used to communicate between local services on a pod. Fixes issues where localhost resolves incorrectly.")
@@ -236,7 +234,7 @@ func Main() int {
 
 	reconcileErrorsCounter := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "prometheus_operator_reconcile_errors_total",
-		Help: "Number of errors that occurred while reconciling the alertmanager statefulset",
+		Help: "Number of errors that occurred while reconciling the statefulset",
 	}, []string{"controller"})
 
 	triggerByCounter := prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -244,6 +242,11 @@ func Main() int {
 		Help: "Number of times a Kubernetes object add, delete or update event" +
 			" triggered the Prometheus Operator to reconcile an object",
 	}, []string{"controller", "triggered_by", "action"})
+
+	stsDeleteCreateCounter := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "prometheus_operator_reconcile_sts_delete_create_total",
+		Help: "Number of times that reconciling a statefulset required deleting and re-creating it",
+	}, []string{"controller"})
 
 	validationTriggeredCounter := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "prometheus_operator_rule_validation_triggered_total",
@@ -261,6 +264,7 @@ func Main() int {
 		prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),
 		reconcileErrorsCounter,
 		triggerByCounter,
+		stsDeleteCreateCounter,
 		validationTriggeredCounter,
 		validationErrorsCounter,
 	)
@@ -275,6 +279,7 @@ func Main() int {
 		prometheus.WrapRegistererWith(prometheusLabels, r),
 		reconcileErrorsCounter.MustCurryWith(prometheusLabels),
 		triggerByCounter.MustCurryWith(prometheusLabels),
+		stsDeleteCreateCounter.MustCurryWith(prometheusLabels),
 	)
 
 	alertmanagerLabels := prometheus.Labels{"controller": "alertmanager"}
@@ -282,6 +287,7 @@ func Main() int {
 		prometheus.WrapRegistererWith(alertmanagerLabels, r),
 		reconcileErrorsCounter.MustCurryWith(alertmanagerLabels),
 		triggerByCounter.MustCurryWith(alertmanagerLabels),
+		stsDeleteCreateCounter.MustCurryWith(alertmanagerLabels),
 	)
 
 	mux.Handle("/metrics", promhttp.HandlerFor(r, promhttp.HandlerOpts{}))

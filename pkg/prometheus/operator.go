@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	monitoring "github.com/coreos/prometheus-operator/pkg/apis/monitoring"
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoringclient "github.com/coreos/prometheus-operator/pkg/client/versioned"
 	"github.com/coreos/prometheus-operator/pkg/k8sutil"
@@ -75,6 +76,7 @@ type Operator struct {
 	queue workqueue.RateLimitingInterface
 
 	reconcileErrorsCounter *prometheus.CounterVec
+	stsDeleteCreateCounter *prometheus.CounterVec
 
 	// triggerByCounter is a set of counters keeping track of the amount
 	// of times Prometheus Operator was triggered to reconcile its created
@@ -146,7 +148,6 @@ type Config struct {
 	ThanosDefaultBaseImage        string
 	Namespaces                    Namespaces
 	Labels                        Labels
-	CrdGroup                      string
 	CrdKinds                      monitoringv1.CrdKinds
 	EnableValidation              bool
 	LocalHost                     string
@@ -344,9 +345,10 @@ func New(conf Config, logger log.Logger) (*Operator, error) {
 
 // RegisterMetrics registers Prometheus metrics on the given Prometheus
 // registerer.
-func (c *Operator) RegisterMetrics(r prometheus.Registerer, reconcileErrorsCounter *prometheus.CounterVec, triggerByCounter *prometheus.CounterVec) {
+func (c *Operator) RegisterMetrics(r prometheus.Registerer, reconcileErrorsCounter *prometheus.CounterVec, triggerByCounter *prometheus.CounterVec, stsDeleteCreateCounter *prometheus.CounterVec) {
 	c.reconcileErrorsCounter = reconcileErrorsCounter
 	c.triggerByCounter = triggerByCounter
+	c.stsDeleteCreateCounter = stsDeleteCreateCounter
 
 	c.reconcileErrorsCounter.With(prometheus.Labels{}).Add(0)
 
@@ -1158,7 +1160,8 @@ func (c *Operator) sync(key string) error {
 	sErr, ok := err.(*apierrors.StatusError)
 
 	if ok && sErr.ErrStatus.Code == 422 && sErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
-		level.Debug(c.logger).Log("msg", "resolving illegal update of Prometheus StatefulSet")
+		c.stsDeleteCreateCounter.With(prometheus.Labels{}).Inc()
+		level.Info(c.logger).Log("msg", "resolving illegal update of Prometheus StatefulSet", "details", sErr.ErrStatus.Details)
 		propagationPolicy := metav1.DeletePropagationForeground
 		if err := ssetClient.Delete(sset.GetName(), &metav1.DeleteOptions{PropagationPolicy: &propagationPolicy}); err != nil {
 			return errors.Wrap(err, "failed to delete StatefulSet to avoid forbidden action")
@@ -1847,10 +1850,10 @@ func (c *Operator) listMatchingNamespaces(selector labels.Selector) ([]string, e
 
 func (c *Operator) createCRDs() error {
 	crds := []*extensionsobj.CustomResourceDefinition{
-		k8sutil.NewCustomResourceDefinition(c.config.CrdKinds.Prometheus, c.config.CrdGroup, c.config.Labels.LabelsMap, c.config.EnableValidation),
-		k8sutil.NewCustomResourceDefinition(c.config.CrdKinds.ServiceMonitor, c.config.CrdGroup, c.config.Labels.LabelsMap, c.config.EnableValidation),
-		k8sutil.NewCustomResourceDefinition(c.config.CrdKinds.PodMonitor, c.config.CrdGroup, c.config.Labels.LabelsMap, c.config.EnableValidation),
-		k8sutil.NewCustomResourceDefinition(c.config.CrdKinds.PrometheusRule, c.config.CrdGroup, c.config.Labels.LabelsMap, c.config.EnableValidation),
+		k8sutil.NewCustomResourceDefinition(c.config.CrdKinds.Prometheus, monitoring.GroupName, c.config.Labels.LabelsMap, c.config.EnableValidation),
+		k8sutil.NewCustomResourceDefinition(c.config.CrdKinds.ServiceMonitor, monitoring.GroupName, c.config.Labels.LabelsMap, c.config.EnableValidation),
+		k8sutil.NewCustomResourceDefinition(c.config.CrdKinds.PodMonitor, monitoring.GroupName, c.config.Labels.LabelsMap, c.config.EnableValidation),
+		k8sutil.NewCustomResourceDefinition(c.config.CrdKinds.PrometheusRule, monitoring.GroupName, c.config.Labels.LabelsMap, c.config.EnableValidation),
 	}
 
 	crdClient := c.crdclient.ApiextensionsV1beta1().CustomResourceDefinitions()
